@@ -37,6 +37,9 @@ osl = try_import(:CoinOptServices)
 scs = try_import(:SCS)
 nlw = try_import(:AmplNLWriter)
 brn = try_import(:BARON)
+csd = try_import(:CSDP)
+#csd = try_import(:SemidefiniteProgramming)
+@show csd
 
 # Create solver lists
 # LP solvers
@@ -138,7 +141,10 @@ nlw && osl && push!(minlp_solvers, AmplNLWriter.CouenneNLSolver())
 brn && push!(minlp_solvers, BARON.BaronSolver())
 # Semidefinite solvers
 sdp_solvers = Any[]
-mos && push!(sdp_solvers, Mosek.MosekSolver(LOG=0))
+csd && push!(sdp_solvers, CSDP.CSDPSolver())
+#csd && push!(sdp_solvers, SemidefiniteProgramming.CSDPSolver(verbose=true))
+#sda && push!(sdp_solvers, SemidefiniteProgramming.SDPA())
+#   mos && push!(sdp_solvers, Mosek.MosekSolver(LOG=0))
 # For some problems, SCS still cannot solve it even for very large value of max_iters
 # so the value of max_iters cannot just be large for every test
 # This function can be used to increase it just for one test
@@ -149,7 +155,7 @@ function fixscs(solver, max_iters)
         solver
     end
 end
-scs && push!(sdp_solvers, SCS.SCSSolver(eps=1e-6,verbose=0))
+#   scs && push!(sdp_solvers, SCS.SCSSolver(eps=1e-6,verbose=0))
 
 const error_map = Dict()
 grb && (error_map[Gurobi.GurobiSolver] = Gurobi.GurobiError)
