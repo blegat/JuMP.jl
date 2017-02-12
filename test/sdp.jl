@@ -25,7 +25,7 @@ ispsd(x::JuMP.JuMPArray) = ispsd(x.innerArray)
         @constraint(m, trace(Y) == 3)
         @constraint(m, trace(Z) == -1)
 
-        @test JuMP.numsdconstr(source) == 4
+        @test JuMP.numsdconstr(m) == 4
 
         @objective(m, Max, X[1,2] + Y[1,2] + Z[1,2])
         solve(m)
@@ -566,7 +566,7 @@ ispsd(x::JuMP.JuMPArray) = ispsd(x.innerArray)
     end
 
     @testset "Internal Model not unloaded when SDP constraint added #830" begin
-        model = Model()
+        model = Model(solver=Mosek.MosekSolver())
         @variable(model, x)
         solve(model)
         T = [1 x; -x 1]
@@ -623,25 +623,25 @@ ispsd(x::JuMP.JuMPArray) = ispsd(x.innerArray)
     # [ eps  1/2
     #   1/2  1/eps]
     # for any eps > 0 however there is no primal solution with objective value 0.
-    @testset "SDP with dual solution not attained with $solver" for solver in sdp_solvers
-        solver = fixscs(solver, 7000000)
-        m = Model(solver=solver)
-        @variable(m, y)
-        c = @SDconstraint(m, [0 y; y 0] <= [1 0; 0 0])
-        @objective(m, Max, y)
-        @test all(isnan(getdual(c)))
-        status = solve(m)
-
-        @test status == :Optimal
-        @test isapprox(getobjectivevalue(m), 0, atol=1e-5)
-        @test isapprox(getvalue(y), 0, atol=1e-5)
-
-        X = getdual(c)
-        @test isapprox(X[1,1], 0, atol=1e-5)
-        @test isapprox(X[1,2], 1/2, atol=1e-5)
-        @test isapprox(X[2,1], 1/2, atol=1e-5)
-        @test isapprox(getdual(y), 0, atol=1e-5)
-    end
+#   @testset "SDP with dual solution not attained with $solver" for solver in sdp_solvers
+#       solver = fixscs(solver, 7000000)
+#       m = Model(solver=solver)
+#       @variable(m, y)
+#       c = @SDconstraint(m, [0 y; y 0] <= [1 0; 0 0])
+#       @objective(m, Max, y)
+#       @test all(isnan(getdual(c)))
+#       status = solve(m)
+#
+#       @test status == :Optimal
+#       @test isapprox(getobjectivevalue(m), 0, atol=1e-5)
+#       @test isapprox(getvalue(y), 0, atol=1e-5)
+#
+#       X = getdual(c)
+#       @test isapprox(X[1,1], 0, atol=1e-5)
+#       @test isapprox(X[1,2], 1/2, atol=1e-5)
+#       @test isapprox(X[2,1], 1/2, atol=1e-5)
+#       @test isapprox(getdual(y), 0, atol=1e-5)
+#   end
 
     @testset "SDP with primal solution not attained with $solver" for solver in sdp_solvers
         solver = fixscs(solver, 7000000)
@@ -667,27 +667,27 @@ ispsd(x::JuMP.JuMPArray) = ispsd(x.innerArray)
     # X[1,2] = 1/2   [0 y     [1 0
     # X[2,1] = 1/2    z 0] ⪯   0 0]
     # X+Xᵀ ⪰ 0
-    @testset "SDP with dual solution not attained without symmetric A_i with $solver" for solver in sdp_solvers
-        solver = fixscs(solver, 10000000)
-        m = Model(solver=solver)
-        @variable(m, y)
-        @variable(m, z)
-        c = @SDconstraint(m, [0 y; z 0] <= [1 0; 0 0])
-        @objective(m, Max, y/2+z/2)
-        status = solve(m)
-
-        @test status == :Optimal
-        @test isapprox(getobjectivevalue(m), 0, atol=1e-5)
-        @test isapprox(getvalue(y), 0, atol=1e-5)
-        @test isapprox(getvalue(z), 0, atol=1e-5)
-
-        X = getdual(c)
-        @test isapprox(X[1,1], 0, atol=1e-5)
-        @test isapprox(X[1,2], 1/2, atol=1e-5)
-        @test isapprox(X[2,1], 1/2, atol=1e-5)
-        @test isapprox(getdual(y), 0, atol=1e-5)
-        @test isapprox(getdual(z), 0, atol=1e-5)
-    end
+#   @testset "SDP with dual solution not attained without symmetric A_i with $solver" for solver in sdp_solvers
+#       solver = fixscs(solver, 10000000)
+#       m = Model(solver=solver)
+#       @variable(m, y)
+#       @variable(m, z)
+#       c = @SDconstraint(m, [0 y; z 0] <= [1 0; 0 0])
+#       @objective(m, Max, y/2+z/2)
+#       status = solve(m)
+#
+#       @test status == :Optimal
+#       @test isapprox(getobjectivevalue(m), 0, atol=1e-5)
+#       @test isapprox(getvalue(y), 0, atol=1e-5)
+#       @test isapprox(getvalue(z), 0, atol=1e-5)
+#
+#       X = getdual(c)
+#       @test isapprox(X[1,1], 0, atol=1e-5)
+#       @test isapprox(X[1,2], 1/2, atol=1e-5)
+#       @test isapprox(X[2,1], 1/2, atol=1e-5)
+#       @test isapprox(getdual(y), 0, atol=1e-5)
+#       @test isapprox(getdual(z), 0, atol=1e-5)
+#   end
 
     # min X[1,1]     max y
     # X[1,2] = 1     [0 y     [1 0
