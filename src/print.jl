@@ -101,7 +101,7 @@ typealias PrintSymbols Dict{Symbol,String}
 math(s,mathmode) = mathmode ? s : "\$\$ $s \$\$"
 
 # helper to look up corresponding JuMPContainerData
-printdata(v::JuMPContainer) = getmeta(v, :model).varData[v]
+printdata(v::JuMPContainer) = _getmodel(v).varData[v]
 function printdata(v::Array{Variable})
     if isempty(v)
         error("Cannot locate printing data for an empty array")
